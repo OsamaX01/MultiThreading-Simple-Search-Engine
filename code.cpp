@@ -7,12 +7,60 @@
 
 using namespace std;
 
-vector<string> files;
 char ch;
 int threshold;
+long long totalFound = 0;
+int aboveThreshold = 0;
+int equalsThreshold = 0;
+int belowThreshold = 0;
+mutex m1, m2, m3, m4;
+vector<string> files;
+
+void increaseTotalFound(int x) {
+    m1.lock();
+    totalFound += x;
+    m1.unlock(); 
+}
+
+void increaseAboveThreshold() {
+    m2.lock();
+    aboveThreshold++; 
+    m2.unlock();
+}
+
+void increaseEqualsThreshold() {
+    m3.lock();
+    equalsThreshold++; 
+    m3.unlock();
+}
+
+void increaseBelowThreshold() {
+    m4.lock();
+    belowThreshold++; 
+    m4.unlock();
+}
 
 void secrchInFiles(int threadId, int leftFile, int rightFile) {
-    
+    printf("TID%d --> Starting thread firstItem=%d, lastItem=%d\n", threadId, leftFile, rightFile + 1);
+    for (int i = leftFile; i <= rightFile; i++) {
+        ifstream curFile(files[i]);
+        int count = 0;
+        char c;
+        while (curFile >> c) {
+            if (c == ch) {
+                count++;
+            }
+        }
+
+        printf("TID%d --> File: %s, (%c) found=%d\n", threadId, files[i].c_str(), ch, count);
+        
+        increaseTotalFound(count);
+        if (count < threshold) increaseBelowThreshold();
+        else if (count == threshold) increaseEqualsThreshold();
+        else increaseAboveThreshold();
+    }
+
+    printf("TID%d --> Ending thread firstItem=%d, lastItem=%d\n", threadId, leftFile, rightFile);
 }
 
 void distribute(int leftThread, int rightTread, int filesPerThread) {
