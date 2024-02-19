@@ -11,7 +11,28 @@ vector<string> files;
 char ch;
 int threshold;
 
+void secrchInFiles(int threadId, int leftFile, int rightFile) {
+    
+}
+
 void distribute(int leftThread, int rightTread, int filesPerThread) {
+    if (filesPerThread == 0) {
+        for (int i = leftThread; i <= rightTread; i++) {
+            printf("TID%d --> I have nothing to do\n", i);
+        }
+        return;
+    }
+
+    int numThreads = rightTread - leftThread + 1;
+    thread threads[numThreads]; 
+
+    for (int i = leftThread; i <= rightTread; i++) {
+        threads[i] = thread(secrchInFiles, i, i * filesPerThread, i * filesPerThread + filesPerThread - 1);
+    }
+    
+    for (int i = leftThread; i <= rightTread; i++) {
+        threads[i].join();
+    }
 
 }
 
