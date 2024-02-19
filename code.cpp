@@ -7,14 +7,21 @@
 
 using namespace std;
 
+struct FileStatistics {
+    string name;
+    int id;
+    int count;
+};
+
 char ch;
 int threshold;
 long long totalFound = 0;
 int aboveThreshold = 0;
 int equalsThreshold = 0;
 int belowThreshold = 0;
-mutex m1, m2, m3, m4;
+mutex m1, m2, m3, m4, m5;
 vector<string> files;
+vector<FileStatistics> sortedFiles;
 
 void increaseTotalFound(int x) {
     m1.lock();
@@ -53,7 +60,11 @@ void secrchInFiles(int threadId, int leftFile, int rightFile) {
         }
 
         printf("TID%d --> File: %s, (%c) found=%d\n", threadId, files[i].c_str(), ch, count);
-        
+    
+        m5.lock();
+        sortedFiles.push_back({files[i], i, count});
+        m5.unlock();
+
         increaseTotalFound(count);
         if (count < threshold) increaseBelowThreshold();
         else if (count == threshold) increaseEqualsThreshold();
@@ -116,6 +127,26 @@ int main(int argc, char *argv[]) {
     else {
         printf("Unexpected input :))\n");
         return 0;
+    }
+
+    printf("Main --> TotalFound=%lld, AboveThreshold=%d, EqualsThreshold=%d, BelowThreshold=%d\n", totalFound, aboveThreshold, equalsThreshold, belowThreshold);
+    printf("Main --> Sorted list of files in out.txt\n");
+
+    sort(
+        sortedFiles.begin(),
+        sortedFiles.end(),
+        [&](const FileStatistics &a, const FileStatistics &b) {
+            if (a.count == b.count) {
+                return a.id > b.id;
+            }
+            return a.count > b.count;
+        }
+    );
+
+    freopen("out.txt", "w", stdout);
+    printf("Sorted list of files:\n");
+    for (int i = 0; i < numFiles; i++) {
+        printf("%d.[ %s ] (found = %d)\n", i + 1, sortedFiles[i].name.c_str(), sortedFiles[i].count);
     }
 
     return 0;
